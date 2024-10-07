@@ -17,6 +17,7 @@ public class SwiftFlutterBarcodeScannerPlugin: NSObject, FlutterPlugin, ScanBarc
     public static var viewController = UIViewController()
     public static var lineColor:String=""
     public static var cancelButtonText:String=""
+    public static var descriptionText:String=""
     public static var isShowFlashIcon:Bool=false
     var pendingResult:FlutterResult!
     public static var isContinuousScan:Bool=false
@@ -66,6 +67,11 @@ public class SwiftFlutterBarcodeScannerPlugin: NSObject, FlutterPlugin, ScanBarc
             SwiftFlutterBarcodeScannerPlugin.cancelButtonText = buttonText
         }else {
             SwiftFlutterBarcodeScannerPlugin.cancelButtonText = "Cancel"
+        }
+        if let descriptionText = args["descriptionText"] as? String{
+            SwiftFlutterBarcodeScannerPlugin.descriptionText = descriptionText
+        }else {
+            SwiftFlutterBarcodeScannerPlugin.descriptionText = "Scan QR Code"
         }
         if let flashStatus = args["isShowFlashIcon"] as? Bool{
             SwiftFlutterBarcodeScannerPlugin.isShowFlashIcon = flashStatus
@@ -181,12 +187,36 @@ class BarcodeScannerViewController: UIViewController {
         return self.isOrientationPortrait ? (screenSize.height - (screenSize.width*0.8))/2 :
             (screenSize.height - (screenSize.height*0.8))/2
     }()
+
+    //Top view
+    private lazy var topView : UIView! = {
+        let view = UIView()
+        view.backgroundColor = UIColor.black
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+
     //Bottom view
     private lazy var bottomView : UIView! = {
         let view = UIView()
         view.backgroundColor = UIColor.black
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
+    }()
+
+    /// Create and display the description label
+    private lazy var descriptionLabel : UILabel! = {
+        let label = UILabel()
+
+        // let attributedString = NSMutableAttributedString(string: "Ejemplo")
+        // attributedString.addAttribute(.foregroundColor, value: UIColor.white, range: NSRange(location: 0, length: 5))
+        // label.attributedText = attributedString
+        label.text = SwiftFlutterBarcodeScannerPlugin.descriptionText
+        label.textColor = UIColor.white
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.textAlignment = .center
+
+        return label
     }()
     
     /// Create and return flash button
@@ -341,6 +371,7 @@ class BarcodeScannerViewController: UIViewController {
             self.view.addSubview(qrCodeFrameView)
             self.view.bringSubviewToFront(qrCodeFrameView)
             qrCodeFrameView.layer.insertSublayer(fillLayer, below: videoPreviewLayer!)
+            self.view.bringSubviewToFront(topView)
             self.view.bringSubviewToFront(bottomView)
             self.view.bringSubviewToFront(flashIcon)
             if(!SwiftFlutterBarcodeScannerPlugin.isShowFlashIcon){
@@ -349,6 +380,7 @@ class BarcodeScannerViewController: UIViewController {
             qrCodeFrameView.layoutIfNeeded()
             qrCodeFrameView.layoutSubviews()
             qrCodeFrameView.setNeedsUpdateConstraints()
+            self.view.bringSubviewToFront(descriptionLabel)
             self.view.bringSubviewToFront(cancelButton)
             self.view.bringSubviewToFront(switchCameraButton)
         }
@@ -359,10 +391,21 @@ class BarcodeScannerViewController: UIViewController {
     
     /// Apply constraints to ui components
     private func setConstraintsForControls() {
+        self.view.addSubview(topView)
+        self.view.addSubview(descriptionLabel)
         self.view.addSubview(bottomView)
         self.view.addSubview(cancelButton)
         self.view.addSubview(flashIcon)
         self.view.addSubview(switchCameraButton)
+
+        topView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant:0).isActive = true
+        topView.topAnchor.constraint(equalTo: view.topAnchor, constant:0).isActive = true
+        topView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant:0).isActive = true
+        topView.heightAnchor.constraint(equalToConstant:self.isOrientationPortrait ? 100.0 : 70.0).isActive=true
+
+        descriptionLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        descriptionLabel.heightAnchor.constraint(equalToConstant: 120.0).isActive = true
+        descriptionLabel.widthAnchor.constraint(equalToConstant: 240.0).isActive = true
         
         bottomView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant:0).isActive = true
         bottomView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant:0).isActive = true
